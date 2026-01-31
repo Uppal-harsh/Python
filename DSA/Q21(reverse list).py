@@ -1,5 +1,5 @@
-a = [2,35,6,34,12,57,112]
-b = []
-for i in range(-1,-(len(a)+1),-1):
-    b.append(a[i])
-print(b)
+n = [2,95,11,48,24,74,14]
+m = []
+for i in range (-1,-(len(n)+1),-1):
+    m.append(n[i])
+print(m)
