@@ -7,5 +7,7 @@ for i in range(len(a)):
         n.append(a[i])
     else:
         m.append(a[i])
+n.sort()
+m.sort()
 q = n+m
 print(q)
