@@ -1,5 +1,7 @@
-a = int(input("enter a number:"))
-if a%2 == 0:
-    print("the number is even")
-else:
-    print("the number is odd")
+def checker(a):
+    if a%2 == 0:
+        print("the number is even")
+    else:
+        print("the number is odd")
+    return a
+checker(int(input()))
