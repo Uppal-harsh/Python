@@ -1,8 +1,7 @@
-n = int(input("enter"))
-for i in range(n):
-    for j in range(n-i):
-        if j<(n-i):
-            print("*", end=" ")
-        else:
-            print(" ", end=" ")
-    print("")
+rows = 5
+
+for i in range(1, rows + 1):
+    for j in range(1, i + 1):
+        print((i + j) % 2, end=" ")
+
+    print()
