@@ -114,6 +114,6 @@ Vehicle enters zone → Status: "Monitoring"
 
 ## 👥 Built For
 
-JOE (Joint Open Enforcement) Project — Smart Traffic Management System demonstration.
+JOE (Joy of Engineering) Subject Project — Smart Traffic Management System demonstration.
 
 ---

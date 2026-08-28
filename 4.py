@@ -5,3 +5,4 @@ for i in range(1, rows + 1):
         print((i + j) % 2, end=" ")
 
     print()
+    for i in range(if x==)

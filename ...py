@@ -1,6 +1,19 @@
-nums = [1,2,3,4,5,6,7,8,9]
-lst1 = []
-for i in nums:
-    lst1.append(i)
-print(lst1)
-print(1 in nums)
+import random
+
+letters = "abcdefgh"
+symbols = "!@#$%&*"
+numbers = "123456789"
+
+a = int(input("Letters: "))
+b = int(input("Symbols: "))
+c = int(input("Numbers: "))
+
+password = (
+    random.choices(letters, k=a)
+    + random.choices(symbols, k=b)
+    + random.choices(numbers, k=c)
+)
+
+random.shuffle(password)
+
+print("".join(password))
