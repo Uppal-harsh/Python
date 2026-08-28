@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart No-Parking Zone Violation Detection and Alert System — Real-time vehicle monitoring, ANPR simulation, and automated challan generation.">
+    <title>SENTINEL — No-Parking Zone Violation Detection System</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚨</text></svg>">
+    <!-- Tesseract.js for browser-based OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+
+    <!-- ═══════ HEADER ═══════ -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <div class="logo-icon">🚨</div>
+                <div class="logo-text">
+                    <h1>SENTINEL</h1>
+                    <span>No-Parking Zone Detection System</span>
+                </div>
+            </div>
+            <div class="header-status" id="server-status">
+                <div class="status-dot"></div>
+                <span>System Active</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════ STATS BAR ═══════ -->
+    <section class="stats-bar" id="stats-bar">
+        <div class="stat-card">
+            <div class="stat-icon">🚗</div>
+            <div class="stat-info">
+                <div class="stat-value" id="stat-total">0</div>
+                <div class="stat-label">Vehicles Detected</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📍</div>
+            <div class="stat-info">
+                <div class="stat-value" id="stat-active">0</div>
+                <div class="stat-label">Currently in Zone</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-info">
+                <div class="stat-value" id="stat-challans">0</div>
+                <div class="stat-label">Challans Issued</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">📨</div>
+            <div class="stat-info">
+                <div class="stat-value" id="stat-sms">0</div>
+                <div class="stat-label">SMS Warnings Sent</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════ MAIN CONTENT ═══════ -->
+    <main class="main-content">
+
+        <!-- Camera Feed Panel -->
+        <section class="panel camera-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    📷 Live Camera Feed
+                </div>
+                <span class="panel-badge" style="background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.25);">● LIVE</span>
+            </div>
+            <div class="panel-body">
+                <div class="camera-feed" id="camera-feed">
+                    <div class="camera-label">
+                        <div class="rec-dot"></div>
+                        <span id="camera-label-text">CAMERA OFF</span>
+                    </div>
+
+                    <!-- Real webcam video -->
+                    <video id="webcam-video" autoplay playsinline muted></video>
+
+                    <!-- Hidden canvas for frame capture -->
+                    <canvas id="capture-canvas" style="display:none;"></canvas>
+
+                    <!-- Placeholder shown when camera is off -->
+                    <div class="camera-center-content" id="camera-placeholder">
+                        <div class="cam-icon">📹</div>
+                        <p>Click "Start Camera" to begin</p>
+                    </div>
+
+                    <!-- Scan overlay with crosshair -->
+                    <div class="scan-overlay" id="scan-overlay">
+                        <div class="scan-crosshair"></div>
+                        <div class="scan-label">SCANNING PLATE...</div>
+                    </div>
+
+                    <!-- Detected plate display -->
+                    <div class="detected-plate-display" id="detected-plate-display"></div>
+
+                    <div class="camera-timestamp" id="camera-timestamp">--:--:--</div>
+                </div>
+
+                <!-- OCR Progress Bar -->
+                <div class="ocr-progress-wrapper" id="ocr-progress-wrapper" style="display:none;">
+                    <div class="ocr-progress-bar">
+                        <div class="ocr-progress-fill" id="ocr-progress-fill"></div>
+                    </div>
+                    <span class="ocr-progress-text" id="ocr-progress-text">Initializing OCR...</span>
+                </div>
+
+                <div class="camera-controls">
+                    <button class="btn btn-primary" id="btn-camera" onclick="toggleCamera()">
+                        📷 Start Camera
+                    </button>
+                    <button class="btn btn-simulate" id="btn-scan" onclick="scanPlate()" disabled>
+                        🔍 Scan Plate
+                    </button>
+                    <button class="btn btn-ghost" id="btn-detect" onclick="simulateDetection()">
+                        🚘 Simulate Detection
+                    </button>
+                    <button class="btn btn-ghost" id="btn-detect-custom" onclick="simulateDetectionCustom()">
+                        ✏️ Custom Plate
+                    </button>
+                </div>
+                <div class="connection-error" id="connection-error">
+                    ⚠️ Cannot connect to backend server. Make sure <code>python backend/app.py</code> is running on port 5000.
+                </div>
+            </div>
+        </section>
+
+        <!-- SMS Log Panel (right sidebar) -->
+        <section class="panel sms-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    📱 SMS Notification Log
+                </div>
+                <span class="panel-badge" id="sms-count-badge" style="background:rgba(168,85,247,0.15);color:#a855f7;border:1px solid rgba(168,85,247,0.25);">0</span>
+            </div>
+            <div class="panel-body" id="sms-log-container">
+                <div class="sms-empty" id="sms-empty">
+                    <span>📭</span>
+                    <p>No SMS warnings yet</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Vehicles Panel -->
+        <section class="panel vehicles-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    🅿️ Active Vehicles — Internal Database
+                </div>
+                <span class="panel-badge" id="vehicle-count-badge" style="background:rgba(59,130,246,0.15);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);">0</span>
+            </div>
+            <div class="panel-body">
+                <div class="table-wrapper">
+                    <table id="vehicles-table">
+                        <thead>
+                            <tr>
+                                <th>Number Plate</th>
+                                <th>Entry Time</th>
+                                <th>Time Elapsed</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehicles-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="vehicles-empty">
+                    <div class="empty-icon">🚗</div>
+                    <p>No vehicles currently in zone</p>
+                    <p class="empty-sub">Click "Simulate Vehicle Detection" to add one</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Challan Records Panel -->
+        <section class="panel challan-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    📋 Challan Records
+                </div>
+                <span class="panel-badge" id="challan-count-badge" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.25);">0</span>
+            </div>
+            <div class="panel-body">
+                <div class="table-wrapper">
+                    <table id="challans-table">
+                        <thead>
+                            <tr>
+                                <th>Challan ID</th>
+                                <th>Number Plate</th>
+                                <th>Violation Time</th>
+                                <th>Location</th>
+                                <th>GPS Coordinates</th>
+                                <th>Fine Amount</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="challans-tbody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="empty-state" id="challans-empty">
+                    <div class="empty-icon">📄</div>
+                    <p>No challans issued yet</p>
+                    <p class="empty-sub">Challans are auto-generated after 7 minutes of illegal parking</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ═══════ CHALLAN MODAL ═══════ -->
+    <div class="modal-overlay" id="challan-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🚨 Traffic Violation Challan</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="challan-modal-body">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ TOAST CONTAINER ═══════ -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
